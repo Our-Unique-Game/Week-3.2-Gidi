@@ -7,6 +7,16 @@ public class Mover : MonoBehaviour
 
     private Rigidbody2D rb;
 
+    public float MoveSpeed
+    {
+        get => moveSpeed;
+        set
+        {
+            moveSpeed = value;
+            Debug.Log($"Mover speed updated to: {moveSpeed}");
+        }
+    }
+
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -22,5 +32,14 @@ public class Mover : MonoBehaviour
     {
         // Move to the right at the specified speed
         rb.linearVelocity = new Vector2(moveSpeed, rb.linearVelocity.y);
+    }
+
+    /// <summary>
+    /// Public method to change the movement speed.
+    /// </summary>
+    /// <param name="newSpeed">The new speed value.</param>
+    public void SetSpeed(float newSpeed)
+    {
+        MoveSpeed = newSpeed;
     }
 }

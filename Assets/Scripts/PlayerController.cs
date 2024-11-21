@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private float speed = 5f; // Forward speed
+    [SerializeField] private float speed = 5f; // Initial forward speed
+    [SerializeField] private float speedIncrease = 1f; // Speed increase increment
+    [SerializeField] private float distanceThreshold = 100f; // Distance interval for speed increase
     [SerializeField] private float explosionRadius = 2f; // Radius of explosion
     [SerializeField] private int lives = 3; // Player lives
     [SerializeField] private float winPositionX = 1000f; // X position to trigger "You Win"
@@ -12,11 +14,13 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rb;
     private UIManager uiManager;
+    private Mover mover; // Reference to the Mover script
     private bool isGameOver = false; // Flag to check if the game is over
 
     private readonly float[] lanePositions = { -3.1f, 0f, 3.2f }; // Predefined lane positions
     private int currentLane = 1; // Default starting lane is the middle lane
 
+    private float lastSpeedIncreasePosition = 0f; // Tracks the last position where speed increased
     private SpriteRenderer spriteRenderer;
 
     private void Start()
@@ -24,10 +28,16 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         uiManager = FindObjectOfType<UIManager>();
+        mover = FindObjectOfType<Mover>();
 
         if (uiManager != null)
         {
             uiManager.SetLives(lives);
+        }
+
+        if (mover != null)
+        {
+            mover.MoveSpeed = speed; // Set the initial mover speed
         }
 
         SetPlayerPositionToLane();
@@ -39,6 +49,15 @@ public class PlayerController : MonoBehaviour
 
         // Automatic movement to the right
         rb.linearVelocity = new Vector2(speed, rb.linearVelocity.y);
+
+        // Sync mover speed with player speed
+        if (mover != null)
+        {
+            mover.MoveSpeed = speed;
+        }
+
+        // Check for speed increase
+        CheckSpeedIncrease();
 
         // Check for win condition
         if (transform.position.x >= winPositionX)
@@ -61,6 +80,17 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Explode();
+        }
+    }
+
+    private void CheckSpeedIncrease()
+    {
+        // Check if player has moved the required distance
+        if (transform.position.x - lastSpeedIncreasePosition >= distanceThreshold)
+        {
+            speed += speedIncrease; // Increase speed
+            lastSpeedIncreasePosition = transform.position.x; // Update last position
+            Debug.Log($"Speed increased to {speed}");
         }
     }
 
@@ -117,6 +147,7 @@ public class PlayerController : MonoBehaviour
 
                 if (lives <= 0)
                 {
+                    mover.SetSpeed(0);
                     TriggerGameOver();
                 }
             }
@@ -192,6 +223,8 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.isKinematic = true;
 
+        mover.SetSpeed(0);
+        
         // Notify UIManager to display "You Win" text
         if (uiManager != null)
         {
