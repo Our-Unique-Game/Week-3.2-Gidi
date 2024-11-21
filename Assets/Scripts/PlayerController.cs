@@ -6,34 +6,45 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float laneHeight = 3f; // Height difference between lanes
     [SerializeField] private float explosionRadius = 2f; // Radius of explosion
     [SerializeField] private int lives = 3; // Player lives
-    [SerializeField] private int currentLane = 1; // Current lane (0 = bottom, 1 = middle, 2 = top)
-    [SerializeField] private int maxLanes = 3; // Total number of lanes
+    [SerializeField] private float winPositionX = 1000f; // X position to trigger "You Win"
+    [SerializeField] private Sprite bombSprite; // Sprite to display during explosion
+    [SerializeField] private float explosionDuration = 0.5f; // Time to display the bomb sprite
+    [SerializeField] private Sprite normalSprite; // Normal player sprite
 
     private Rigidbody2D rb;
     private UIManager uiManager;
+    private CameraController cameraController; // Reference to the camera controller
+    private bool isGameOver = false; // Flag to check if the game is over
+
+    private readonly float[] lanePositions = { -1.7f, 1.4f, 4.6f };
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         uiManager = FindObjectOfType<UIManager>();
+        cameraController = FindObjectOfType<CameraController>();
 
         if (uiManager != null)
         {
             uiManager.SetLives(lives);
         }
 
-        // Initialize the current lane based on the player's initial position
-        float startY = transform.position.y;
-        currentLane = Mathf.RoundToInt(startY / laneHeight);
-        currentLane = Mathf.Clamp(currentLane, 0, maxLanes - 1); // Ensure within bounds
         SetPlayerPositionToLane();
-        Debug.Log($"Player starts at lane {currentLane}");
     }
 
     private void Update()
     {
+        if (isGameOver) return; // Prevent further actions if the game is over
+
         // Automatic movement to the right
-        rb.linearVelocity = new Vector2(speed, rb.linearVelocity.y);
+        rb.velocity = new Vector2(speed, rb.velocity.y);
+
+        // Check for win condition
+        if (transform.position.x >= winPositionX)
+        {
+            TriggerWin();
+            return;
+        }
 
         // Lane-based movement
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
@@ -57,7 +68,7 @@ public class PlayerController : MonoBehaviour
         int targetLane = currentLane + direction;
 
         // Ensure the lane remains within bounds
-        if (targetLane >= 0 && targetLane < maxLanes)
+        if (targetLane >= 0 && targetLane < lanePositions.Length)
         {
             currentLane = targetLane;
             SetPlayerPositionToLane();
@@ -71,14 +82,14 @@ public class PlayerController : MonoBehaviour
 
     private void SetPlayerPositionToLane()
     {
-        // Align the player's Y-position with the current lane
-        Vector3 newPosition = new Vector3(transform.position.x, currentLane * laneHeight, transform.position.z);
+        Vector3 newPosition = new Vector3(transform.position.x, lanePositions[currentLane], transform.position.z);
         transform.position = newPosition;
     }
 
     private void Explode()
     {
-        // Detect objects in explosion radius
+        StartCoroutine(ChangeToBombSprite());
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, explosionRadius);
 
         foreach (var hit in hits)
@@ -105,7 +116,7 @@ public class PlayerController : MonoBehaviour
 
                 if (lives <= 0)
                 {
-                    GameOver();
+                    TriggerGameOver();
                 }
             }
         }
@@ -113,40 +124,87 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Exploded!");
     }
 
+    private System.Collections.IEnumerator ChangeToBombSprite()
+    {
+        spriteRenderer.sprite = bombSprite;
+        yield return new WaitForSeconds(explosionDuration);
+        spriteRenderer.sprite = normalSprite;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Bomb"))
         {
-            lives--; // Reduce lives for collision
+            lives--;
             uiManager.SetLives(lives);
 
             Debug.Log($"Player hit a bomb! Lives remaining: {lives}");
 
             if (lives <= 0)
             {
-                GameOver();
+                TriggerGameOver();
             }
 
-            Destroy(collision.gameObject); // Destroy the bomb
+            Destroy(collision.gameObject);
         }
         else if (collision.gameObject.CompareTag("Obstacle"))
         {
-            lives--; // Reduce lives for obstacle collision
+            lives--;
             uiManager.SetLives(lives);
 
             Debug.Log($"Player hit an obstacle! Lives remaining: {lives}");
 
             if (lives <= 0)
             {
-                GameOver();
+                TriggerGameOver();
             }
         }
     }
 
-    private void GameOver()
+    private void TriggerGameOver()
     {
+        isGameOver = true;
+
+        // Stop player movement
+        rb.velocity = Vector2.zero;
+        rb.isKinematic = true; // Prevent further physics interactions
+
+        // Stop camera movement
+        if (cameraController != null)
+        {
+            cameraController.StopCamera();
+        }
+
+        // Notify UIManager to display "Game Over" text
+        if (uiManager != null)
+        {
+            uiManager.ShowGameOverText();
+        }
+
         Debug.Log("Game Over!");
-        // Add your game-over logic here (e.g., load a Game Over scene)
+    }
+
+    private void TriggerWin()
+    {
+        isGameOver = true;
+
+        // Stop player movement
+        rb.velocity = Vector2.zero;
+        rb.isKinematic = true;
+
+        // Stop camera movement
+        if (cameraController != null)
+        {
+            cameraController.StopCamera();
+        }
+
+        // Notify UIManager to display "You Win" text
+        if (uiManager != null)
+        {
+            uiManager.ShowWinText();
+        }
+
+        Debug.Log("You Win!");
     }
 
     // Debugging the explosion radius in the editor
