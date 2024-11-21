@@ -3,7 +3,6 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float speed = 5f; // Forward speed
-    [SerializeField] private float laneHeight = 3f; // Height difference between lanes
     [SerializeField] private float explosionRadius = 2f; // Radius of explosion
     [SerializeField] private int lives = 3; // Player lives
     [SerializeField] private float winPositionX = 1000f; // X position to trigger "You Win"
@@ -13,16 +12,18 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rb;
     private UIManager uiManager;
-    private CameraController cameraController; // Reference to the camera controller
     private bool isGameOver = false; // Flag to check if the game is over
 
-    private readonly float[] lanePositions = { -1.7f, 1.4f, 4.6f };
+    private readonly float[] lanePositions = { -3.1f, 0f, 3.2f }; // Predefined lane positions
+    private int currentLane = 1; // Default starting lane is the middle lane
+
+    private SpriteRenderer spriteRenderer;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         uiManager = FindObjectOfType<UIManager>();
-        cameraController = FindObjectOfType<CameraController>();
 
         if (uiManager != null)
         {
@@ -37,7 +38,7 @@ public class PlayerController : MonoBehaviour
         if (isGameOver) return; // Prevent further actions if the game is over
 
         // Automatic movement to the right
-        rb.velocity = new Vector2(speed, rb.velocity.y);
+        rb.linearVelocity = new Vector2(speed, rb.linearVelocity.y);
 
         // Check for win condition
         if (transform.position.x >= winPositionX)
@@ -119,6 +120,11 @@ public class PlayerController : MonoBehaviour
                     TriggerGameOver();
                 }
             }
+            else if (hit.CompareTag("Obstacle"))
+            {
+                Destroy(hit.gameObject); // Destroy cactus without affecting lives
+                Debug.Log("Cactus exploded!");
+            }
         }
 
         Debug.Log("Exploded!");
@@ -135,8 +141,7 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Bomb"))
         {
-            lives--;
-            uiManager.SetLives(lives);
+            uiManager.SetLives(--lives);
 
             Debug.Log($"Player hit a bomb! Lives remaining: {lives}");
 
@@ -149,15 +154,16 @@ public class PlayerController : MonoBehaviour
         }
         else if (collision.gameObject.CompareTag("Obstacle"))
         {
-            lives--;
-            uiManager.SetLives(lives);
+            uiManager.SetLives(--lives);
 
-            Debug.Log($"Player hit an obstacle! Lives remaining: {lives}");
+            Debug.Log($"Player hit a cactus! Lives remaining: {lives}");
 
             if (lives <= 0)
             {
                 TriggerGameOver();
             }
+
+            Destroy(collision.gameObject); // Destroy the cactus after collision
         }
     }
 
@@ -166,14 +172,8 @@ public class PlayerController : MonoBehaviour
         isGameOver = true;
 
         // Stop player movement
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
         rb.isKinematic = true; // Prevent further physics interactions
-
-        // Stop camera movement
-        if (cameraController != null)
-        {
-            cameraController.StopCamera();
-        }
 
         // Notify UIManager to display "Game Over" text
         if (uiManager != null)
@@ -189,14 +189,8 @@ public class PlayerController : MonoBehaviour
         isGameOver = true;
 
         // Stop player movement
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
         rb.isKinematic = true;
-
-        // Stop camera movement
-        if (cameraController != null)
-        {
-            cameraController.StopCamera();
-        }
 
         // Notify UIManager to display "You Win" text
         if (uiManager != null)

@@ -19,28 +19,48 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        gameOverText.gameObject.SetActive(false); // Hide Game Over text initially
-        winText.gameObject.SetActive(false); // Hide You Win text initially
+        // Ensure these texts are hidden when the game starts
+        if (gameOverText != null)
+        {
+            gameOverText.gameObject.SetActive(false);
+        }
+
+        if (winText != null)
+        {
+            winText.gameObject.SetActive(false);
+        }
     }
 
     public void SetLives(int lives)
     {
-        livesText.text = $"Lives: {lives}";
+        if (livesText != null)
+        {
+            livesText.text = $"Lives: {lives}";
+        }
     }
 
     public void AddScore(int points)
     {
         score += points;
-        scoreText.text = $"Score: {score}";
+        if (scoreText != null)
+        {
+            scoreText.text = $"Score: {score}";
+        }
     }
 
     public void ShowGameOverText()
     {
-        gameOverText.gameObject.SetActive(true); // Display the Game Over text
+        if (gameOverText != null)
+        {
+            gameOverText.gameObject.SetActive(true); // Display the Game Over text
+        }
     }
 
     public void ShowWinText()
     {
-        winText.gameObject.SetActive(true); // Display the You Win text
+        if (winText != null)
+        {
+            winText.gameObject.SetActive(true); // Display the You Win text
+        }
     }
 }
