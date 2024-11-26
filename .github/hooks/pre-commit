@@ -1,0 +1,6 @@
+#!/bin/bash
+dotnet format --check --folder --include **/*.cs --verbosity minimal
+if [ $? -ne 0 ]; then
+    echo "Code formatting issues detected. Please fix them before committing."
+    exit 1
+fi

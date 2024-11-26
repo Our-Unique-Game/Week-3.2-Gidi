@@ -223,7 +223,7 @@ public class PlayerController : MonoBehaviour
 
         mover.SetSpeed(0);
 
-		// Notify UIManager to display "You Win" text
+        // Notify UIManager to display "You Win" text
         if (uiManager != null)
         {
             uiManager.ShowWinText();
