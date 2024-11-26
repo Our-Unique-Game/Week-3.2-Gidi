@@ -79,7 +79,6 @@ public class PlayerController : MonoBehaviour
         {
             Explode();
         }
-
     }
 
     private void CheckSpeedIncrease()
