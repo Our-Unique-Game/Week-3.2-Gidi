@@ -65,7 +65,6 @@ public class PlayerController : MonoBehaviour
             TriggerWin();
             return;
         }
-
         // Lane-based movement
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
         {
@@ -75,12 +74,12 @@ public class PlayerController : MonoBehaviour
         {
             MoveLane(-1); // Move down
         }
-
         // Explode with Space Bar
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Explode();
         }
+
     }
 
     private void CheckSpeedIncrease()
